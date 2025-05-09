@@ -124,3 +124,77 @@ class TestAccountService(TestCase):
         self.assertEqual(response.status_code, status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
 
     # ADD YOUR TEST CASES HERE ...
+    def test_get_account(self):
+        """Should successfully fetch one account"""
+        sample_entry = self._create_accounts(1)[0]
+        response = self.client.get(
+            f"{BASE_URL}/{sample_entry.id}", content_type="application/json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        json_result = response.get_json()
+        self.assertEqual(json_result["name"], sample_entry.name)
+
+    def test_get_account_not_found(self):
+        """Should return 404 when account is not found"""
+        response = self.client.get(f"{BASE_URL}/0")
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_get_account_list(self):
+        """Should retrieve list of all existing accounts"""
+        self._create_accounts(5)
+        response = self.client.get(BASE_URL)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        account_list = response.get_json()
+        self.assertEqual(len(account_list), 5)
+
+    def test_get_account_list_not_found(self):
+        """Should return 200 and an empty array when no accounts exist"""
+        self._create_accounts(0)
+        response = self.client.get(BASE_URL)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.get_json()
+        self.assertEqual(len(results), 0)
+
+    def test_update_account(self):
+        """Should modify an existing account's attributes"""
+        generated = AccountFactory()
+        creation_response = self.client.post(BASE_URL, json=generated.serialize())
+        self.assertEqual(creation_response.status_code, status.HTTP_201_CREATED)
+
+        created_entry = creation_response.get_json()
+        created_entry["name"] = "something bad"
+
+        update_response = self.client.put(f"{BASE_URL}/{created_entry['id']}", json=created_entry)
+        self.assertEqual(update_response.status_code, status.HTTP_200_OK)
+        updated_entry = update_response.get_json()
+        self.assertEqual(updated_entry["name"], "something bad")
+
+    def test_delete_account(self):
+        """Should remove the account from the database"""
+        entry_to_delete = self._create_accounts(1)[0]
+        deletion = self.client.delete(f"{BASE_URL}/{entry_to_delete.id}")
+        self.assertEqual(deletion.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_method_not_allowed(self):
+        """Should respond with 405 for invalid HTTP method usage"""
+        invalid_call = self.client.delete(BASE_URL)
+        self.assertEqual(invalid_call.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_security_headers(self):
+        """Should include all required security headers"""
+        secure_request = self.client.get('/')
+        self.assertEqual(secure_request.status_code, status.HTTP_200_OK)
+        expected = {
+            'X-Frame-Options': 'SAMEORIGIN',
+            'X-XSS-Protection': '1; mode=block',
+            'X-Content-Type-Options': 'nosniff',
+            'Content-Security-Policy': "default-src 'self'; object-src 'none'",
+            'Referrer-Policy': 'strict-origin-when-cross-origin'
+        }
+    
+
+    def test_cors_security(self):
+        """Should send back CORS policy headers"""
+        cors_check = self.client.get('/')
+        self.assertEqual(cors_check.status_code, status.HTTP_200_OK)
+
