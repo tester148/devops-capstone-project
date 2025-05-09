@@ -60,6 +60,7 @@ def create_accounts():
 # LIST ALL ACCOUNTS
 ######################################################################
 
+
 @app.route("/accounts", methods=["GET"])
 def list_accounts():
     """
@@ -88,7 +89,7 @@ def get_accounts(account_id):
     result = Account.find(account_id)
     if not result:
         abort(status.HTTP_404_NOT_FOUND, f"Account with id [{account_id}] not located.")
-    
+
     return result.serialize(), status.HTTP_200_OK
 
 
@@ -107,7 +108,7 @@ def update_account(account_id):
     existing = Account.find(account_id)
     if not existing:
         abort(status.HTTP_404_NOT_FOUND, f"Account with id [{account_id}] not found for update")
-    
+
     existing.deserialize(request.get_json())
     existing.update()
 
