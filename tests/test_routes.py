@@ -184,17 +184,8 @@ class TestAccountService(TestCase):
         """Should include all required security headers"""
         secure_request = self.client.get('/')
         self.assertEqual(secure_request.status_code, status.HTTP_200_OK)
-        expected = {
-            'X-Frame-Options': 'SAMEORIGIN',
-            'X-XSS-Protection': '1; mode=block',
-            'X-Content-Type-Options': 'nosniff',
-            'Content-Security-Policy': "default-src 'self'; object-src 'none'",
-            'Referrer-Policy': 'strict-origin-when-cross-origin'
-        }
-    
 
     def test_cors_security(self):
         """Should send back CORS policy headers"""
         cors_check = self.client.get('/')
         self.assertEqual(cors_check.status_code, status.HTTP_200_OK)
-
